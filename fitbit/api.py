@@ -185,6 +185,9 @@ class Fitbit(object):
                 setattr(self, 'delete_%s' % resource, curry(
                     self._DELETE_COLLECTION_RESOURCE, resource))
 
+        for parameter in ['weight', 'fat']:
+            setattr(self, 'get_body_%s' % parameter, curry(self._LOGGED_RESOURCE, parameter))
+
         for qualifier in self._qualifiers:
             setattr(self, '%s_activities' % qualifier, curry(self.activity_stats, qualifier=qualifier))
             setattr(self, '%s_foods' % qualifier, curry(self._food_stats,
@@ -246,6 +249,44 @@ class Fitbit(object):
         url = "%s/%s/user/-/profile.json" % (self.API_ENDPOINT,
                                               self.API_VERSION)
         return self.make_request(url, data)
+
+    def _LOGGED_RESOURCE(self, resource, date=None, period=None, end_date=None, user_id=None):
+        """
+        Get logged entries for weight and fat:
+
+        https://wiki.fitbit.com/display/API/API-Get-Body-Fat
+        GET /<api-version>/user/-/body/log/fat/date/<date>.<response-format>
+        GET /<api-version>/user/-/body/log/fat/date/<base-date>/<period>.<response-format>
+        GET /<api-version>/user/-/body/log/fat/date/<base-date>/<end-date>.<response-format>
+
+        https://wiki.fitbit.com/display/API/API-Get-Body-Weight
+        GET /<api-version>/user/-/body/log/weight/date/<date>.<response-format>
+        GET /<api-version>/user/-/body/log/weight/date/<base-date>/<period>.<response-format>
+        GET /<api-version>/user/-/body/log/weight/date/<base-date>/<end-date>.<response-format>
+        """
+        if not date:
+            date = datetime.date.today()
+
+        if period is None and end_date is None:
+            url = "%s/%s/user/%s/body/log/%s/date/%s.json" % (
+                self.API_ENDPOINT,
+                self.API_VERSION,
+                user_id,
+                resource,
+                date,
+            )
+        if end_date is not None or period is not None:
+            to = end_date if end_date is not None else period
+            url = "%s/%s/user/%s/body/log/%s/date/%s/%s.json" % (
+                self.API_ENDPOINT,
+                self.API_VERSION,
+                user_id,
+                resource,
+                date,
+                to,
+            )
+
+        return self.make_request(url)
 
     def _COLLECTION_RESOURCE(self, resource, date=None, user_id=None,
                              data=None):
