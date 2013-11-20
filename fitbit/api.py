@@ -267,6 +267,9 @@ class Fitbit(object):
         if not date:
             date = datetime.date.today()
 
+        if not user_id:
+            user_id = '-'
+
         if period is None and end_date is None:
             url = "%s/%s/user/%s/body/log/%s/date/%s.json" % (
                 self.API_ENDPOINT,
